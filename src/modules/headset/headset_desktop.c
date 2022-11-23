@@ -1,13 +1,13 @@
-#include "headset/headset.h"
+#include "core/maf.h"
+#include "core/os.h"
 #include "data/modelData.h"
 #include "event/event.h"
 #include "graphics/graphics.h"
-#include "core/maf.h"
-#include "core/os.h"
+#include "headset/headset.h"
 #include "util.h"
 #include <math.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 static struct {
   bool initialized;
@@ -34,10 +34,10 @@ static struct {
 
 static void onFocus(bool focused) {
   state.focused = focused;
-  lovrEventPush((Event) { .type = EVENT_FOCUS, .data.boolean = { focused } });
+  lovrEventPush((Event){.type = EVENT_FOCUS, .data.boolean = {focused}});
 }
 
-static bool desktop_init(HeadsetConfig* config) {
+static bool desktop_init(HeadsetConfig *config) {
   state.offset = config->offset;
   state.clipNear = .01f;
   state.clipFar = 0.f;
@@ -65,15 +65,13 @@ static void desktop_destroy(void) {
   //
 }
 
-static bool desktop_getName(char* name, size_t length) {
+static bool desktop_getName(char *name, size_t length) {
   strncpy(name, "Simulator", length - 1);
   name[length - 1] = '\0';
   return true;
 }
 
-static HeadsetOrigin desktop_getOriginType(void) {
-  return ORIGIN_HEAD;
-}
+static HeadsetOrigin desktop_getOriginType(void) { return ORIGIN_HEAD; }
 
 static double desktop_getDisplayTime(void) {
   return state.nextDisplayTime - state.epoch;
@@ -83,26 +81,26 @@ static double desktop_getDeltaTime(void) {
   return state.nextDisplayTime - state.prevDisplayTime;
 }
 
-static void desktop_getDisplayDimensions(uint32_t* width, uint32_t* height) {
+static void desktop_getDisplayDimensions(uint32_t *width, uint32_t *height) {
   os_window_get_fbsize(width, height);
 }
 
-static uint32_t desktop_getViewCount(void) {
-  return 1;
-}
+static uint32_t desktop_getViewCount(void) { return 1; }
 
-static bool desktop_getViewPose(uint32_t view, float* position, float* orientation) {
+static bool desktop_getViewPose(uint32_t view, float *position,
+                                float *orientation) {
   vec3_init(position, state.position);
   quat_fromMat4(orientation, state.headTransform);
   position[1] += state.offset;
   return view == 0;
 }
 
-static bool desktop_getViewAngles(uint32_t view, float* left, float* right, float* up, float* down) {
+static bool desktop_getViewAngles(uint32_t view, float *left, float *right,
+                                  float *up, float *down) {
   float aspect, fov;
   uint32_t width, height;
   desktop_getDisplayDimensions(&width, &height);
-  aspect = (float) width / height;
+  aspect = (float)width / height;
   fov = .7f;
   *left = atanf(tanf(fov) * aspect);
   *right = atanf(tanf(fov) * aspect);
@@ -111,7 +109,7 @@ static bool desktop_getViewAngles(uint32_t view, float* left, float* right, floa
   return view == 0;
 }
 
-static void desktop_getClipDistance(float* clipNear, float* clipFar) {
+static void desktop_getClipDistance(float *clipNear, float *clipFar) {
   *clipNear = state.clipNear;
   *clipFar = state.clipFar;
 }
@@ -121,11 +119,11 @@ static void desktop_setClipDistance(float clipNear, float clipFar) {
   state.clipFar = clipFar;
 }
 
-static void desktop_getBoundsDimensions(float* width, float* depth) {
+static void desktop_getBoundsDimensions(float *width, float *depth) {
   *width = *depth = 0.f;
 }
 
-static const float* desktop_getBoundsGeometry(uint32_t* count) {
+static const float *desktop_getBoundsGeometry(uint32_t *count) {
   *count = 0;
   return NULL;
 }
@@ -144,7 +142,8 @@ static bool desktop_getPose(Device device, vec3 position, quat orientation) {
   return false;
 }
 
-static bool desktop_getVelocity(Device device, vec3 velocity, vec3 angularVelocity) {
+static bool desktop_getVelocity(Device device, vec3 velocity,
+                                vec3 angularVelocity) {
   if (device != DEVICE_HEAD) {
     return false;
   }
@@ -154,7 +153,8 @@ static bool desktop_getVelocity(Device device, vec3 velocity, vec3 angularVeloci
   return true;
 }
 
-static bool desktop_isDown(Device device, DeviceButton button, bool* down, bool* changed) {
+static bool desktop_isDown(Device device, DeviceButton button, bool *down,
+                           bool *changed) {
   if (device != DEVICE_HAND_LEFT || button != BUTTON_TRIGGER) {
     return false;
   }
@@ -163,7 +163,8 @@ static bool desktop_isDown(Device device, DeviceButton button, bool* down, bool*
   return true;
 }
 
-static bool desktop_isTouched(Device device, DeviceButton button, bool* touched) {
+static bool desktop_isTouched(Device device, DeviceButton button,
+                              bool *touched) {
   return false;
 }
 
@@ -171,28 +172,25 @@ static bool desktop_getAxis(Device device, DeviceAxis axis, vec3 value) {
   return false;
 }
 
-static bool desktop_getSkeleton(Device device, float* poses) {
+static bool desktop_getSkeleton(Device device, float *poses) { return false; }
+
+static bool desktop_vibrate(Device device, float strength, float duration,
+                            float frequency) {
   return false;
 }
 
-static bool desktop_vibrate(Device device, float strength, float duration, float frequency) {
-  return false;
-}
-
-static ModelData* desktop_newModelData(Device device, bool animated) {
+static ModelData *desktop_newModelData(Device device, bool animated) {
   return NULL;
 }
 
-static bool desktop_animate(Device device, struct Model* model) {
+static bool desktop_animate(Device device, struct Model *model) {
   return false;
 }
 
-static Texture* desktop_getTexture(void) {
-  return NULL;
-}
+static Texture *desktop_getTexture(void) { return NULL; }
 
-static Pass* desktop_getPass(void) {
-  Pass* pass = lovrGraphicsGetWindowPass();
+static Pass *desktop_getPass(void) {
+  Pass *pass = lovrGraphicsGetWindowPass();
 
   if (!pass) {
     return pass;
@@ -221,9 +219,7 @@ static void desktop_submit(void) {
   //
 }
 
-static bool desktop_isFocused(void) {
-  return state.focused;
-}
+static bool desktop_isFocused(void) { return state.focused; }
 
 static double desktop_update(void) {
   bool front = os_is_key_down(KEY_W) || os_is_key_down(KEY_UP);
@@ -237,45 +233,56 @@ static double desktop_update(void) {
   state.nextDisplayTime = os_get_time();
   double dt = state.nextDisplayTime - state.prevDisplayTime;
 
-  float movespeed = 3.f * (float) dt;
-  float turnspeed = 3.f * (float) dt;
-  float damping = MAX(1.f - 20.f * (float) dt, 0);
+  float movespeed = 3.f * (float)dt;
+  float turnspeed = 3.f * (float)dt;
+  float damping = MAX(1.f - 20.f * (float)dt, 0);
 
   double mx, my;
   uint32_t width, height;
   os_get_mouse_position(&mx, &my);
-  os_window_get_fbsize(&width, &height);
-
-  double aspect = (width > 0 && height > 0) ? ((double) width / height) : 1.;
-
-  // Mouse move
-  if (os_is_mouse_down(MOUSE_LEFT)) {
-    os_set_mouse_mode(MOUSE_MODE_GRABBED);
-
-    if (state.prevCursorX == -1 && state.prevCursorY == -1) {
-      state.prevCursorX = mx;
-      state.prevCursorY = my;
-    }
-
-    float dx = (float) (mx - state.prevCursorX) / ((float) width);
-    float dy = (float) (my - state.prevCursorY) / ((float) height * aspect);
-    state.angularVelocity[0] = dy / (float) dt;
-    state.angularVelocity[1] = dx / (float) dt;
+  if (state.prevCursorX == -1 && state.prevCursorY == -1) {
     state.prevCursorX = mx;
     state.prevCursorY = my;
-  } else {
-    os_set_mouse_mode(MOUSE_MODE_NORMAL);
-    vec3_scale(state.angularVelocity, damping);
-    state.prevCursorX = state.prevCursorY = -1;
   }
+  os_window_get_fbsize(&width, &height);
+  float dx = (float)(mx - state.prevCursorX) / ((float)height);
+  float dy = (float)(my - state.prevCursorY) / ((float)height);
+  state.prevCursorX = mx;
+  state.prevCursorY = my;
+
+  double aspect = (width > 0 && height > 0) ? ((double)width / height) : 1.;
+
+  // Mouse move
+  // if (os_is_mouse_down(MOUSE_LEFT)) {
+  //   os_set_mouse_mode(MOUSE_MODE_GRABBED);
+
+  //   if (state.prevCursorX == -1 && state.prevCursorY == -1) {
+  //     state.prevCursorX = mx;
+  //     state.prevCursorY = my;
+  //   }
+
+  //   float dx = (float) (mx - state.prevCursorX) / ((float) width);
+  //   float dy = (float) (my - state.prevCursorY) / ((float) height * aspect);
+  //   state.angularVelocity[0] = dy / (float) dt;
+  //   state.angularVelocity[1] = dx / (float) dt;
+  //   state.prevCursorX = mx;
+  //   state.prevCursorY = my;
+  // } else {
+  //   os_set_mouse_mode(MOUSE_MODE_NORMAL);
+  //   vec3_scale(state.angularVelocity, damping);
+  //   state.prevCursorX = state.prevCursorY = -1;
+  // }
 
   state.prevMouseDown = state.mouseDown;
   state.mouseDown = os_is_mouse_down(MOUSE_RIGHT);
 
   // Update velocity
-  state.localVelocity[0] = left ? -movespeed : (right ? movespeed : state.localVelocity[0]);
-  state.localVelocity[1] = up ? movespeed : (down ? -movespeed : state.localVelocity[1]);
-  state.localVelocity[2] = front ? -movespeed : (back ? movespeed : state.localVelocity[2]);
+  state.localVelocity[0] =
+      left ? -movespeed : (right ? movespeed : state.localVelocity[0]);
+  state.localVelocity[1] =
+      up ? movespeed : (down ? -movespeed : state.localVelocity[1]);
+  state.localVelocity[2] =
+      front ? -movespeed : (back ? movespeed : state.localVelocity[2]);
   state.localVelocity[3] = 0.f;
   vec3_init(state.velocity, state.localVelocity);
   mat4_transformDirection(state.headTransform, state.velocity);
@@ -285,15 +292,22 @@ static double desktop_update(void) {
   vec3_add(state.position, state.velocity);
 
   // Update orientation
-  state.pitch = CLAMP(state.pitch - state.angularVelocity[0] * turnspeed, -(float) M_PI / 2.f, (float) M_PI / 2.f);
-  state.yaw -= state.angularVelocity[1] * turnspeed;
+  // state.pitch = CLAMP(state.pitch - state.angularVelocity[0] * turnspeed,
+  //                     -(float)M_PI / 2.f, (float)M_PI / 2.f);
+  // state.yaw -= state.angularVelocity[1] * turnspeed;
+  if (os_is_mouse_down(MOUSE_RIGHT)) {
+    const float FACTOR = 45.0f;
+    state.yaw += dx * dt * FACTOR;
+    state.pitch -= dy * dt * FACTOR;
+  }
 
   // Update head transform
   mat4_identity(state.headTransform);
-  mat4_translate(state.headTransform, 0.f, state.offset, 0.f);
-  mat4_translate(state.headTransform, state.position[0], state.position[1], state.position[2]);
   mat4_rotate(state.headTransform, state.yaw, 0.f, 1.f, 0.f);
   mat4_rotate(state.headTransform, state.pitch, 1.f, 0.f, 0.f);
+  mat4_translate(state.headTransform, state.position[0], state.position[1],
+                 state.position[2]);
+  mat4_translate(state.headTransform, 0.f, state.offset, 0.f);
 
   // Update hand transform to follow cursor
   double px = mx, py = my;
@@ -302,8 +316,9 @@ static double desktop_update(void) {
     px = (px / width) * 2 - 1.0;
     py = (py / height) * 2 - 1.0;
 
-    px +=  .2; // neutral position = pointing towards center-ish
-    px *= .6; // fudged range to juuust cover pointing at the whole scene, but not outside it
+    px += .2; // neutral position = pointing towards center-ish
+    px *= .6; // fudged range to juuust cover pointing at the whole scene, but
+              // not outside it
   }
 
   mat4_set(state.leftHandTransform, state.headTransform);
@@ -319,34 +334,33 @@ static double desktop_update(void) {
 }
 
 HeadsetInterface lovrHeadsetDesktopDriver = {
-  .driverType = DRIVER_DESKTOP,
-  .init = desktop_init,
-  .start = desktop_start,
-  .destroy = desktop_destroy,
-  .getName = desktop_getName,
-  .getOriginType = desktop_getOriginType,
-  .getDisplayTime = desktop_getDisplayTime,
-  .getDeltaTime = desktop_getDeltaTime,
-  .getDisplayDimensions = desktop_getDisplayDimensions,
-  .getViewCount = desktop_getViewCount,
-  .getViewPose = desktop_getViewPose,
-  .getViewAngles = desktop_getViewAngles,
-  .getClipDistance = desktop_getClipDistance,
-  .setClipDistance = desktop_setClipDistance,
-  .getBoundsDimensions = desktop_getBoundsDimensions,
-  .getBoundsGeometry = desktop_getBoundsGeometry,
-  .getPose = desktop_getPose,
-  .getVelocity = desktop_getVelocity,
-  .isDown = desktop_isDown,
-  .isTouched = desktop_isTouched,
-  .getAxis = desktop_getAxis,
-  .getSkeleton = desktop_getSkeleton,
-  .vibrate = desktop_vibrate,
-  .newModelData = desktop_newModelData,
-  .animate = desktop_animate,
-  .getTexture = desktop_getTexture,
-  .getPass = desktop_getPass,
-  .submit = desktop_submit,
-  .isFocused = desktop_isFocused,
-  .update = desktop_update
-};
+    .driverType = DRIVER_DESKTOP,
+    .init = desktop_init,
+    .start = desktop_start,
+    .destroy = desktop_destroy,
+    .getName = desktop_getName,
+    .getOriginType = desktop_getOriginType,
+    .getDisplayTime = desktop_getDisplayTime,
+    .getDeltaTime = desktop_getDeltaTime,
+    .getDisplayDimensions = desktop_getDisplayDimensions,
+    .getViewCount = desktop_getViewCount,
+    .getViewPose = desktop_getViewPose,
+    .getViewAngles = desktop_getViewAngles,
+    .getClipDistance = desktop_getClipDistance,
+    .setClipDistance = desktop_setClipDistance,
+    .getBoundsDimensions = desktop_getBoundsDimensions,
+    .getBoundsGeometry = desktop_getBoundsGeometry,
+    .getPose = desktop_getPose,
+    .getVelocity = desktop_getVelocity,
+    .isDown = desktop_isDown,
+    .isTouched = desktop_isTouched,
+    .getAxis = desktop_getAxis,
+    .getSkeleton = desktop_getSkeleton,
+    .vibrate = desktop_vibrate,
+    .newModelData = desktop_newModelData,
+    .animate = desktop_animate,
+    .getTexture = desktop_getTexture,
+    .getPass = desktop_getPass,
+    .submit = desktop_submit,
+    .isFocused = desktop_isFocused,
+    .update = desktop_update};
