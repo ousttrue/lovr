@@ -1,6 +1,6 @@
 # lua
 add_library(
-  lua STATIC
+  lua SHARED
   lua/lapi.c
   lua/lauxlib.c
   lua/lbaselib.c
@@ -31,6 +31,7 @@ add_library(
   lua/lvm.c
   lua/lzio.c)
 target_include_directories(lua PUBLIC lua)
+target_compile_definitions(lua PUBLIC LUA_BUILD_AS_DLL)
 
 # GLFW settings
 set(GLFW_BUILD_EXAMPLES
