@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/bin/lovr.exe",
             "args": [
-                "C:/ghq/github.com/bjornbytes/lovr-docs/examples/Lighting/PBR_Materials/main.lua"
+                "C:/ghq/github.com/bjornbytes/lovr-docs/examples/Intro/3D_Model/main.lua"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/Debug/bin",

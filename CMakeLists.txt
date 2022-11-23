@@ -86,6 +86,7 @@ add_executable(
   src/modules/data/sound.c
   src/modules/graphics/graphics.c
   src/modules/headset/headset.c
+  src/modules/headset/headset_desktop.c
   src/modules/physics/physics.c
   src/modules/audio/audio.c
   src/modules/audio/spatializer_simple.c
@@ -100,6 +101,7 @@ add_executable(
   #
 )
 target_compile_options(lovr PRIVATE /wd4244 /MP)
+target_compile_definitions(lovr PRIVATE LOVR_USE_DESKTOP LOVR_VK)
 target_include_directories(lovr PRIVATE src src/modules etc src/lib/stdatomic
                                         deps/ode/include)
 target_link_libraries(lovr PRIVATE lua glfw vk glslang msdfgen ode)
