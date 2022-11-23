@@ -77,4 +77,4 @@ add_subdirectory(glslang)
 
 # msdfgen ode
 set(BUILD_SHARED_LIBS ON)
-subdirs(msdfgen ode)
+subdirs(msdfgen ode openxr)
