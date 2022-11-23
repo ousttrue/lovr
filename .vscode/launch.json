@@ -13,7 +13,7 @@
                 "C:/ghq/github.com/bjornbytes/lovr-docs/examples/Lighting/PBR_Materials/main.lua"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/Debug/bin",
             "environment": [],
             "console": "integratedTerminal"
         }

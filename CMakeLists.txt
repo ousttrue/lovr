@@ -20,7 +20,7 @@ add_executable(
   lovr
   deps/glslang/StandAlone/ResourceLimits.cpp
   deps/glslang/StandAlone/resource_limits_c.cpp
-  src/main.c
+  src/main.cpp
   src/util.c
   src/api/api.c
   src/api/l_lovr.c
