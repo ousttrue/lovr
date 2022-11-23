@@ -25,3 +25,6 @@
 [submodule "deps/vulkan-headers"]
 	path = deps/vulkan-headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
+[submodule "plugins/lovr-luasocket"]
+	path = plugins/lovr-luasocket
+	url = https://github.com/brainrom/lovr-luasocket.git

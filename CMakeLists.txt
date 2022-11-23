@@ -16,6 +16,23 @@ target_include_directories(vk INTERFACE $ENV{VULKAN_SDK}/include)
 
 add_subdirectory(deps)
 
+# Plugins
+set(LOVR 1)
+link_libraries(lua)
+file(GLOB LOVR_PLUGINS plugins/*)
+foreach(plugin ${LOVR_PLUGINS})
+  if(IS_DIRECTORY ${plugin} AND EXISTS ${plugin}/CMakeLists.txt)
+    add_subdirectory(${plugin})
+    get_directory_property(PLUGIN_TARGETS DIRECTORY ${plugin} DEFINITION LOVR_PLUGIN_TARGETS)
+    if(NOT PLUGIN_TARGETS)
+      get_directory_property(PLUGIN_TARGETS DIRECTORY ${plugin} BUILDSYSTEM_TARGETS)
+    endif()
+    set_target_properties(${PLUGIN_TARGETS} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/plugins/lib")
+    list(APPEND ALL_PLUGIN_TARGETS ${PLUGIN_TARGETS})
+  endif()
+endforeach()
+
+# lovr
 add_executable(
   lovr
   deps/glslang/StandAlone/ResourceLimits.cpp
