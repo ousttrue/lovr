@@ -3,3 +3,10 @@
 bin
 build*
 *.*.h
+!build.zig
+!build.zig.zon
+
+zig-out
+zig-cache
+.zig-cache
+Makefile
