@@ -14,38 +14,74 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "lovr",
-        // .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
     b.installArtifact(exe);
 
-    // exe.linkLibrary(luajit);
-    exe.addIncludePath(luajit.getEmittedIncludeTree());
-    exe.linkLibC();
-    exe.addIncludePath(b.path("src/modules"));
-
-    to_hex(b, exe, b.path("etc/boot.lua"), "etc_boot_lua", "boot.lua.h");
-    // exe.addCSourceFile(.{
-    //     .file = boot_lua_h,
-    // });
-    exe.addCSourceFiles(.{
-        .files = &.{
-            "src/main.c",
-        },
-    });
-}
-
-fn to_hex(b: *std.Build, exe: *std.Build.Step.Compile, src: std.Build.LazyPath, array_name: []const u8, dst: []const u8) void {
     const ddx = b.addExecutable(.{
         .target = b.host,
         .name = "ddx",
         .root_source_file = b.path("ddx.zig"),
     });
-    const run = b.addRunArtifact(ddx);
-    exe.step.dependOn(&run.step);
-    run.addFileArg(src);
-    run.addArg(array_name);
-    const generated = run.addOutputFileArg(dst);
-    exe.addIncludePath(generated.dirname());
+    for (DDX) |src| {
+        const run = b.addRunArtifact(ddx);
+        exe.step.dependOn(&run.step);
+        run.addDirectoryArg(b.path(""));
+        run.addArg(src);
+        const out_file = std.mem.concat(
+            b.allocator,
+            u8,
+            &.{ src, ".h" },
+        ) catch @panic("concat");
+        // std.debug.print("=>'{s}'\n", .{out_file});
+        const generated = run.addOutputFileArg(out_file);
+        if (std.mem.indexOf(u8, src, "shaders")) |_| {
+            exe.addIncludePath(generated.dirname().dirname());
+        } else {
+            exe.addIncludePath(generated.dirname());
+        }
+    }
+
+    exe.linkLibrary(luajit);
+    exe.addIncludePath(luajit.getEmittedIncludeTree());
+    exe.linkLibC();
+    exe.addIncludePath(b.path("src/modules"));
+    exe.addIncludePath(b.path("src"));
+    exe.addIncludePath(b.path("src/lib/std"));
+    exe.addCSourceFiles(.{
+        .files = &.{
+            "src/main.c",
+            "src/util.c",
+            "src/core/os_win32.c",
+            "src/api/api.c",
+            "src/api/l_event.c",
+            "src/api/l_math.c",
+            "src/api/l_lovr.c",
+            "src/modules/data/modelData.c",
+            "src/modules/graphics/graphics.c",
+        },
+    });
+    exe.addIncludePath(b.path("etc"));
+
+    exe.linkSystemLibrary("Dwmapi");
+    exe.linkSystemLibrary("Ole32");
 }
+
+const DDX = [_][]const u8{
+    "etc/boot.lua",
+    "etc/shaders/unlit.vert",
+    "etc/shaders/unlit.frag",
+    "etc/shaders/normal.frag",
+    "etc/shaders/font.frag",
+    "etc/shaders/cubemap.vert",
+    "etc/shaders/cubemap.frag",
+    "etc/shaders/equirect.frag",
+    "etc/shaders/fill.vert",
+    "etc/shaders/fill_array.frag",
+    "etc/shaders/mask.vert",
+    "etc/shaders/animator.comp",
+    "etc/shaders/blender.comp",
+    "etc/shaders/tallymerge.comp",
+    "etc/shaders/lovr.glsl",
+};

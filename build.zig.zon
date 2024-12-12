@@ -24,8 +24,8 @@
     // internet connectivity.
     .dependencies = .{
         .ziglua = .{
-            .url = "git+https://github.com/ousttrue/ziglua.git#90dab7e72173709353dcaaa6d911bed7655c030d",
-            .hash = "12205923460670d52fb29fc74ec920d283dbe629a256787a54f4290748c05bee6ae1",
+            .url = "git+https://github.com/ousttrue/ziglua.git?ref=fix/build_windows_luajit#3beb98e07d6710166f295122396284add1c158e5",
+            .hash = "12202d5089ba1f33f8a436ed3b8ae24142a477768f74bce8ae5d4ab4fa7e18782148",
         },
     },
     .paths = .{
