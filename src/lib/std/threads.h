@@ -13,7 +13,11 @@ enum { mtx_plain };
 typedef HANDLE thrd_t;
 typedef CRITICAL_SECTION mtx_t;
 typedef CONDITION_VARIABLE cnd_t;
+#ifdef __clang__
+#define thread_local __thread
+#else
 #define thread_local __declspec(thread)
+#endif
 #else
 #include <pthread.h>
 typedef pthread_t thrd_t;

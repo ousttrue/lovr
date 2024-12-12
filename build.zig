@@ -1,5 +1,33 @@
 const std = @import("std");
 
+const FILES = .{
+    "src/main.c",
+    // "src/util.c",
+    "src/core/os_win32.c",
+    // "src/api/api.c",
+    "src/api/l_event.c",
+    // "src/api/l_math.c",
+    // "src/api/l_lovr.c",
+    // "src/modules/data/modelData.c",
+    // "src/modules/graphics/graphics.c",
+};
+
+const FLAGS = .{
+    "-D_WIN32",
+    "-DLOVR_DISABLE_AUDIO",
+    "-DLOVR_DISABLE_DATA",
+    // "-DLOVR_DISABLE_EVENT",
+    "-DLOVR_DISABLE_FILESYSTEM",
+    "-DLOVR_DISABLE_GRAPHICS",
+    "-DLOVR_DISABLE_HEADSET",
+    // "-DLOVR_DISABLE_MATH",
+    "-DLOVR_DISABLE_PHYSICS",
+    // "-DLOVR_DISABLE_SYSTEM",
+    // "-DLOVR_DISABLE_THREAD",
+    // "-DLOVR_DISABLE_TIMER",
+    // "-DLOVR_DISABLE_UTF8",
+};
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -50,17 +78,8 @@ pub fn build(b: *std.Build) void {
     exe.addIncludePath(b.path("src"));
     exe.addIncludePath(b.path("src/lib/std"));
     exe.addCSourceFiles(.{
-        .files = &.{
-            "src/main.c",
-            "src/util.c",
-            "src/core/os_win32.c",
-            "src/api/api.c",
-            "src/api/l_event.c",
-            "src/api/l_math.c",
-            "src/api/l_lovr.c",
-            "src/modules/data/modelData.c",
-            "src/modules/graphics/graphics.c",
-        },
+        .files = &FILES,
+        .flags = &FLAGS,
     });
     exe.addIncludePath(b.path("etc"));
 
