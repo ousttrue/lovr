@@ -1,7 +1,9 @@
 const std = @import("std");
+const build_lua = @import("build_lua.zig").build_lua;
 
 const FILES = .{
     "src/main.c",
+    //
     "src/util.c",
     "src/core/os_win32.c",
     "src/core/gpu_vk.c",
@@ -15,6 +17,13 @@ const FILES = .{
     "src/api/l_math_randomGenerator.c",
     "src/api/l_math_curve.c",
     "src/api/l_lovr.c",
+    "src/api/l_headset.c",
+    "src/api/l_headset_layer.c",
+    "src/modules/headset/headset_simulator.c",
+    "src/api/l_audio.c",
+    "src/api/l_audio_source.c",
+    "src/modules/audio/audio.c",
+    "src/modules/audio/spatializer_simple.c",
     "src/api/l_graphics.c",
     "src/api/l_graphics_buffer.c",
     "src/api/l_graphics_pass.c",
@@ -90,23 +99,90 @@ const FILES = .{
     // "deps/msdfgen/ext/import-svg.cpp",
     "deps/msdfgen/ext/resolve-shape-geometry.cpp",
     "deps/msdfgen/ext/save-png.cpp",
+    "deps/glfw/src/context.c",
+    "deps/glfw/src/init.c",
+    "deps/glfw/src/input.c",
+    "deps/glfw/src/monitor.c",
+    "deps/glfw/src/platform.c",
+    "deps/glfw/src/vulkan.c",
+    "deps/glfw/src/window.c",
+    "deps/glfw/src/egl_context.c",
+    "deps/glfw/src/osmesa_context.c",
+    "deps/glfw/src/null_init.c",
+    "deps/glfw/src/null_monitor.c",
+    "deps/glfw/src/null_window.c",
+    "deps/glfw/src/null_joystick.c",
+    "deps/glfw/src/win32_module.c",
+    "deps/glfw/src/win32_time.c",
+    "deps/glfw/src/win32_thread.c",
+    "deps/glfw/src/win32_init.c",
+    "deps/glfw/src/win32_joystick.c",
+    "deps/glfw/src/win32_monitor.c",
+    "deps/glfw/src/win32_window.c",
+    "deps/glfw/src/wgl_context.c",
+    // "deps/glslang/MachineIndependent/glslang.y",
+    "deps/glslang/glslang/MachineIndependent/glslang_tab.cpp",
+    "deps/glslang/glslang/MachineIndependent/attribute.cpp",
+    "deps/glslang/glslang/MachineIndependent/Constant.cpp",
+    "deps/glslang/glslang/MachineIndependent/iomapper.cpp",
+    "deps/glslang/glslang/MachineIndependent/InfoSink.cpp",
+    "deps/glslang/glslang/MachineIndependent/Initialize.cpp",
+    "deps/glslang/glslang/MachineIndependent/IntermTraverse.cpp",
+    "deps/glslang/glslang/MachineIndependent/Intermediate.cpp",
+    "deps/glslang/glslang/MachineIndependent/ParseContextBase.cpp",
+    "deps/glslang/glslang/MachineIndependent/ParseHelper.cpp",
+    "deps/glslang/glslang/MachineIndependent/PoolAlloc.cpp",
+    "deps/glslang/glslang/MachineIndependent/RemoveTree.cpp",
+    "deps/glslang/glslang/MachineIndependent/Scan.cpp",
+    "deps/glslang/glslang/MachineIndependent/ShaderLang.cpp",
+    "deps/glslang/glslang/MachineIndependent/SpirvIntrinsics.cpp",
+    "deps/glslang/glslang/MachineIndependent/SymbolTable.cpp",
+    "deps/glslang/glslang/MachineIndependent/Versions.cpp",
+    "deps/glslang/glslang/MachineIndependent/intermOut.cpp",
+    "deps/glslang/glslang/MachineIndependent/limits.cpp",
+    "deps/glslang/glslang/MachineIndependent/linkValidate.cpp",
+    "deps/glslang/glslang/MachineIndependent/parseConst.cpp",
+    "deps/glslang/glslang/MachineIndependent/reflection.cpp",
+    "deps/glslang/glslang/MachineIndependent/preprocessor/Pp.cpp",
+    "deps/glslang/glslang/MachineIndependent/preprocessor/PpAtom.cpp",
+    "deps/glslang/glslang/MachineIndependent/preprocessor/PpContext.cpp",
+    "deps/glslang/glslang/MachineIndependent/preprocessor/PpScanner.cpp",
+    "deps/glslang/glslang/MachineIndependent/preprocessor/PpTokens.cpp",
+    "deps/glslang/glslang/MachineIndependent/propagateNoContraction.cpp",
+    "deps/glslang/glslang/CInterface/glslang_c_interface.cpp",
+    "deps/glslang/glslang/ResourceLimits/resource_limits_c.cpp",
+    "deps/glslang/SPIRV/GlslangToSpv.cpp",
+    "deps/glslang/SPIRV/InReadableOrder.cpp",
+    "deps/glslang/SPIRV/Logger.cpp",
+    "deps/glslang/SPIRV/SpvBuilder.cpp",
+    "deps/glslang/SPIRV/SpvPostProcess.cpp",
+    "deps/glslang/SPIRV/doc.cpp",
+    "deps/glslang/SPIRV/SpvTools.cpp",
+    "deps/glslang/SPIRV/disassemble.cpp",
+    "deps/glslang/SPIRV/CInterface/spirv_c_interface.cpp",
+    "deps/glslang/SPIRV/SPVRemapper.cpp",
+    "deps/glslang/SPIRV/doc.cpp",
+    "deps/glslang/glslang/GenericCodeGen/CodeGen.cpp",
+    "deps/glslang/glslang/GenericCodeGen/Link.cpp",
+    "deps/glslang/glslang/ResourceLimits/ResourceLimits.cpp",
 };
 
 const FLAGS = .{
-    "-D_WIN32",
-    "-DLOVR_DISABLE_AUDIO",
-    // "-DLOVR_DISABLE_DATA",
-    // "-DLOVR_DISABLE_EVENT",
-    // "-DLOVR_DISABLE_FILESYSTEM",
-    // "-DLOVR_DISABLE_GRAPHICS",
-    "-DLOVR_DISABLE_HEADSET",
-    // "-DLOVR_DISABLE_MATH",
+    // "-DGLFW_DLL",
     "-DLOVR_DISABLE_PHYSICS",
-    // "-DLOVR_DISABLE_SYSTEM",
-    // "-DLOVR_DISABLE_THREAD",
-    // "-DLOVR_DISABLE_TIMER",
-    // "-DLOVR_DISABLE_UTF8",
-    "-DMSDFGEN_PUBLIC=",
+    "-DLOVR_USE_GLFW",
+    "-DLOVR_USE_GLSLANG",
+    "-DLOVR_USE_SIMULATOR",
+    "-DLOVR_VK",
+    "-DMSDFGEN_COPYRIGHT_YEAR=2025",
+    "-DMSDFGEN_PUBLIC=", //__declspec(dllimport)",
+    "-DMSDFGEN_VERSION=1.10.0",
+    "-DMSDFGEN_VERSION_MAJOR=1",
+    "-DMSDFGEN_VERSION_MINOR=10",
+    "-DMSDFGEN_VERSION_REVISION=0",
+    "-D_CRT_NONSTDC_NO_WARNINGS",
+    "-D_CRT_SECURE_NO_WARNINGS",
+    "-D_GLFW_WIN32",
 };
 
 const TO_HEX = [_][]const u8{
@@ -132,14 +208,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const lang: []const u8 = "luajit";
-    const lua_dep = b.dependency("ziglua", .{
-        .target = target,
-        .optimize = optimize,
-        .lang = lang,
-    });
-    const luajit = lua_dep.artifact("lua");
-
     const exe = b.addExecutable(.{
         .name = "lovr",
         .target = target,
@@ -148,7 +216,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const ddx = b.addExecutable(.{
-        .target = b.host,
+        .target = b.graph.host,
         .name = "ddx",
         .root_source_file = b.path("ddx.zig"),
     });
@@ -171,8 +239,12 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    exe.linkLibrary(luajit);
-    exe.addIncludePath(luajit.getEmittedIncludeTree());
+    const lua = build_lua(b, target, optimize);
+    b.installArtifact(lua);
+    exe.step.dependOn(&lua.step);
+    exe.linkLibrary(lua);
+    exe.addIncludePath(lua.getEmittedIncludeTree());
+
     exe.linkLibC();
     exe.linkLibCpp();
     exe.addIncludePath(b.path("src/modules"));
@@ -185,7 +257,37 @@ pub fn build(b: *std.Build) void {
     exe.addIncludePath(b.path("etc"));
     exe.addIncludePath(b.path("deps/msdfgen"));
     exe.addIncludePath(b.path("deps/vulkan-headers/include"));
+    exe.addIncludePath(b.path("deps/glslang/glslang/Include"));
+    exe.addIncludePath(b.path("deps/glslang/glslang/Public"));
+    exe.addIncludePath(b.path("deps/glslang"));
+    exe.addIncludePath(b.path("deps/glfw/include"));
 
     exe.linkSystemLibrary("Dwmapi");
     exe.linkSystemLibrary("Ole32");
+    exe.linkSystemLibrary("Gdi32");
+
+    // glslang/build_info.h
+    const glslang_build_info_h = b.addConfigHeader(.{
+        .style = .{
+            .cmake = b.path("deps/glslang/build_info.h.tmpl"),
+        },
+        .include_path = "glslang/build_info.h",
+    }, .{
+        .major = "14",
+        .minor = "2",
+        .patch = "0",
+        .flavor = "2024-05-02",
+    });
+    exe.addConfigHeader(glslang_build_info_h);
+
+    const luai = b.addExecutable(.{
+        .name = "luai",
+        .target = target,
+        .optimize = optimize,
+    });
+    luai.addCSourceFile(.{
+        .file = b.path("deps/lua/lua.c"),
+    });
+    luai.linkLibrary(lua);
+    b.installArtifact(luai);
 }
