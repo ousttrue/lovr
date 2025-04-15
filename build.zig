@@ -2,7 +2,7 @@ const std = @import("std");
 const build_lua = @import("build_lua.zig");
 const build_ddx = @import("build_ddx.zig");
 const build_glfw = @import("build_glfw.zig").build_glfw;
-const build_glslang = @import("build_glslang.zig").build;
+const build_glslang = @import("build_glslang.zig");
 const build_msdf = @import("build_msdf.zig").build_msdf;
 const zcc = @import("compile_commands.zig");
 
@@ -150,9 +150,19 @@ pub fn build(b: *std.Build) void {
         exe.step.dependOn(&h.step);
     }
 
+    const build_info = build_glslang.config_build_info(b);
+    const glslang = build_glslang.lib(b, target, optimize, build_info);
+    const glslang_standalone = build_glslang.standalone(
+        b,
+        target,
+        optimize,
+        glslang,
+    );
+    glslang_standalone.addConfigHeader(build_info);
+    b.installArtifact(glslang_standalone);
+
     exe.linkLibrary(build_msdf(b, target, optimize));
     exe.linkLibrary(build_glfw(b, target, optimize));
-    const glslang = build_glslang(b, target, optimize);
     exe.linkLibrary(glslang);
     // exe.addIncludePath(glslang.getEmittedIncludeTree().path(b, "Include"));
     // exe.addIncludePath(glslang.getEmittedIncludeTree().path(b, "PUblic"));

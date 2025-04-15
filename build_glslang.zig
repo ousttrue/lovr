@@ -4,7 +4,7 @@ const flags = [_][]const u8{
     "-DENABLE_OPT=1",
 };
 
-fn config_build_info(b: *std.Build) *std.Build.Step.ConfigHeader {
+pub fn config_build_info(b: *std.Build) *std.Build.Step.ConfigHeader {
     const glslang_build_info_h = b.addConfigHeader(.{
         .style = .{
             .cmake = b.path("deps/glslang/build_info.h.tmpl"),
@@ -19,12 +19,12 @@ fn config_build_info(b: *std.Build) *std.Build.Step.ConfigHeader {
     return glslang_build_info_h;
 }
 
-pub fn build(
+pub fn lib(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
+    build_info: *std.Build.Step.ConfigHeader,
 ) *std.Build.Step.Compile {
-    const build_info = config_build_info(b);
     const root = b.path("deps/glslang");
 
     const c = b.addStaticLibrary(.{
@@ -101,46 +101,40 @@ pub fn build(
     c.installHeadersDirectory(b.path("deps/glslang/glslang/Include"), "Include", .{});
     c.installHeadersDirectory(b.path("deps/glslang/glslang/Public"), "PUblic", .{});
 
-    // const py = b.addSystemCommand(&.{"py"});
-    // py.addFileArg(b.path("gen_extension_headers.py"));
-    // py.addArg("-i");
-    // py.addDirectoryArg(b.path("glslang/ExtensionHeaders"));
-    // py.addArg("-o");
-    // const glsl_intrinsic_header_h = py.addOutputFileArg("glslang/glsl_intrinsic_header.h");
-    // // glslang/glsl_intrinsic_header.h
-    // // glsl_intrinsic_header.h
-    // // set(GLSLANG_INTRINSIC_H          "${GLSLANG_GENERATED_INCLUDEDIR}/glslang/glsl_intrinsic_header.h")
-    // // set(GLSLANG_INTRINSIC_PY         "${CMAKE_CURRENT_SOURCE_DIR}/../gen_extension_headers.py")
-    // // set(GLSLANG_INTRINSIC_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../glslang/ExtensionHeaders")
-
-    // // add_custom_command(
-    // //     OUTPUT  ${GLSLANG_INTRINSIC_H}
-    // //     COMMAND Python3::Interpreter "${GLSLANG_INTRINSIC_PY}"
-    // //             "-i" ${GLSLANG_INTRINSIC_HEADER_DIR}
-    // //             "-o" ${GLSLANG_INTRINSIC_H}
-    // //     DEPENDS ${GLSLANG_INTRINSIC_PY}
-    // //     COMMENT "Generating ${GLSLANG_INTRINSIC_H}")
-    // exe.step.dependOn(&py.step);
-    // exe.addIncludePath(glsl_intrinsic_header_h.dirname().dirname());
-
-    // c.linkLibrary(build_limits(b, target, optimize));
-    // const machine_independent = build_machine_independent(b, target, optimize);
-    // machine_independent.addConfigHeader(build_info);
-    // exe.linkLibrary(machine_independent);
-    // const spirv = build_spirv(b, target, optimize);
-    // spirv.addConfigHeader(build_info);
-    // exe.linkLibrary(spirv);
-    //
-    // b.installArtifact(exe);
     return c;
 }
 
-// exe.addCSourceFiles(.{
-//     .files = &.{
-//         "StandAlone/StandAlone.cpp",
-//     },
-//     .flags = &flags,
-// });
-// exe.linkLibCpp();
-// exe.addIncludePath(b.path(""));
-// exe.addConfigHeader(build_info);
+pub fn standalone(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    glslang: *std.Build.Step.Compile,
+) *std.Build.Step.Compile {
+    const exe = b.addExecutable(.{
+        .name = "glslang-standalone",
+        .target = target,
+        .optimize = optimize,
+    });
+    const root = b.path("deps/glslang");
+    exe.addCSourceFiles(.{
+        .root = root,
+        .files = &.{
+            "StandAlone/StandAlone.cpp",
+            "glslang/OSDependent/Windows/ossource.cpp",
+        },
+        .flags = &flags,
+    });
+    exe.linkLibCpp();
+    exe.addIncludePath(root);
+    exe.linkLibrary(glslang);
+
+    const py = b.addSystemCommand(&.{"py"});
+    py.addFileArg(root.path(b, "gen_extension_headers.py"));
+    py.addArg("-i");
+    py.addDirectoryArg(root.path(b, "glslang/ExtensionHeaders"));
+    py.addArg("-o");
+    const glsl_intrinsic_header_h = py.addOutputFileArg("glslang/glsl_intrinsic_header.h");
+    exe.addIncludePath(glsl_intrinsic_header_h.dirname().dirname());
+
+    return exe;
+}
