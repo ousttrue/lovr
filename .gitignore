@@ -13,3 +13,5 @@ Makefile
 
 .cache
 .vscode
+
+compile_commands.json

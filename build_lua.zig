@@ -1,50 +1,12 @@
 const std = @import("std");
 
-const files: []const []const u8 = &.{
-    "deps/lua/lapi.c",
-    "deps/lua/lauxlib.c",
-    "deps/lua/lbaselib.c",
-    "deps/lua/lcode.c",
-    "deps/lua/ldblib.c",
-    "deps/lua/ldebug.c",
-    "deps/lua/ldo.c",
-    "deps/lua/ldump.c",
-    "deps/lua/lfunc.c",
-    "deps/lua/lgc.c",
-    "deps/lua/linit.c",
-    "deps/lua/liolib.c",
-    "deps/lua/llex.c",
-    "deps/lua/lmathlib.c",
-    "deps/lua/lmem.c",
-    "deps/lua/loadlib.c",
-    "deps/lua/lobject.c",
-    "deps/lua/lopcodes.c",
-    "deps/lua/loslib.c",
-    "deps/lua/lparser.c",
-    "deps/lua/lstate.c",
-    "deps/lua/lstring.c",
-    "deps/lua/lstrlib.c",
-    "deps/lua/ltable.c",
-    "deps/lua/ltablib.c",
-    "deps/lua/ltm.c",
-    "deps/lua/lundump.c",
-    "deps/lua/lvm.c",
-    "deps/lua/lzio.c",
-};
-
-const flags: []const []const u8 = &.{
-    "-DWIN32",
-    "-DLUA_USE_WINDOWS",
-    "-D_WINDOWS",
-    "-DUNICODE=1",
-    "-D_UNICODE=1",
-    "-DLUA_BUILD_AS_DLL=1",
-    "-Dlua_EXPORTS",
-    "-fno-sanitize=all",
-};
-
-pub fn build_lua(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Step.Compile {
-    const c = b.addSharedLibrary(.{
+pub fn liblua(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    root: std.Build.LazyPath,
+) *std.Build.Step.Compile {
+    const c = b.addStaticLibrary(.{
         .name = "lua",
         .target = target,
         .optimize = optimize,
@@ -52,14 +14,70 @@ pub fn build_lua(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
     });
 
     c.addCSourceFiles(.{
-        .files = files,
-        .flags = flags,
+        .root = root,
+        .files = &.{
+            "lapi.c",
+            "lcode.c",
+            "ldebug.c",
+            "ldo.c",
+            "ldump.c",
+            "lfunc.c",
+            "lgc.c",
+            "llex.c",
+            "lmem.c",
+            "lobject.c",
+            "lopcodes.c",
+            "lparser.c",
+            "lstate.c",
+            "lstring.c",
+            "ltable.c",
+            "ltm.c",
+            "lundump.c",
+            "lvm.c",
+            "lzio.c",
+            "lauxlib.c",
+            "lbaselib.c",
+            "ldblib.c",
+            "liolib.c",
+            "lmathlib.c",
+            "loslib.c",
+            "ltablib.c",
+            "lstrlib.c",
+            "loadlib.c",
+            "linit.c",
+        },
     });
-    c.addIncludePath(b.path("deps/lua"));
-    c.installHeader(b.path("deps/lua/lua.h"), "lua.h");
-    c.installHeader(b.path("deps/lua/luaconf.h"), "luaconf.h");
-    c.installHeader(b.path("deps/lua/lauxlib.h"), "lauxlib.h");
-    c.installHeader(b.path("deps/lua/lualib.h"), "lualib.h");
+    c.installHeader(root.path(b, "lua.h"), "lua.h");
+    c.installHeader(root.path(b, "luaconf.h"), "luaconf.h");
+    c.installHeader(root.path(b, "lauxlib.h"), "lauxlib.h");
+    c.installHeader(root.path(b, "lualib.h"), "lualib.h");
+    c.addIncludePath(root);
 
     return c;
 }
+
+// pub fn build(b: *std.Build) void {
+//     const target = b.standardTargetOptions(.{});
+//     const optimize = b.standardOptimizeOption(.{});
+//
+//     const exe = b.addExecutable(.{
+//         .name = "lua",
+//         .target = target,
+//         .optimize = optimize,
+//         .link_libc = true,
+//     });
+//     // This declares intent for the executable to be installed into the
+//     // standard location when the user invokes the "install" step (the default
+//     // step when running `zig build`).
+//     b.installArtifact(exe);
+//
+//     const lib = liblua(b, target, optimize);
+//     exe.linkLibrary(lib);
+//     b.installArtifact(lib);
+//
+//     exe.addCSourceFiles(.{
+//         .files = &.{
+//             "lua.c",
+//         },
+//     });
+// }

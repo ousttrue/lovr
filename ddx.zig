@@ -31,7 +31,9 @@ pub fn main() !void {
             },
         }
     }
-    if (std.mem.startsWith(u8, array_name, "etc_shaders")) {
+    if (std.mem.eql(u8, array_name, "etc_shaders_lovr_glsl")) {
+        // skip
+    } else if (std.mem.startsWith(u8, array_name, "etc_shaders")) {
         // array_name = try std.mem.concat(arena, u8, &.{ "lovr_shader", array_name[7..] });
         std.mem.copyForwards(u8, array_name, "lovr_shader");
     }
