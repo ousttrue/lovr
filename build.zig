@@ -19,7 +19,9 @@ pub fn build(b: *std.Build) void {
     });
     targets.append(exe) catch @panic("OOM");
 
-    const lua = build_lua.liblua(b, target, optimize, b.path("deps/lua"));
+    const lua_dep = b.dependency("lua", .{});
+
+    const lua = build_lua.liblua(b, target, optimize, lua_dep.path("src"));
     exe.linkLibrary(lua);
 
     exe.addCSourceFiles(.{
@@ -175,5 +177,3 @@ pub fn build(b: *std.Build) void {
     // cdb_step.dependOn(&ttf_h.run.step);
     cdb_step.dependOn(&glslang.step);
 }
-
-

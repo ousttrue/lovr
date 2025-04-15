@@ -3,6 +3,10 @@
     .fingerprint = 0xd451d5da2d829024,
     .version = "0.0.0",
     .dependencies = .{
+        .lua = .{
+            .url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz",
+            .hash = "N-V-__8AABAhDAAIlXL7OA-0Z5sWQh_FOFGoImvOvJzkRGOg",
+        },
     },
     .paths = .{
         "build.zig",
