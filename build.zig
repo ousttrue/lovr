@@ -129,96 +129,30 @@ pub fn build(b: *std.Build) void {
     const ttf_h = build_ddx.to_header(b, ddx, "etc/VarelaRound.ttf");
     exe.step.dependOn(&ttf_h.step);
 
-    const build_info = build_glslang.config_build_info(b);
-    const glslang_root = b.path("deps/glslang");
-    const glslang = build_glslang.lib(b, target, optimize, glslang_root, build_info);
-    const glslang_standalone = build_glslang.standalone(
-        b,
-        target,
-        optimize,
-        glslang_root,
-        build_info,
-        glslang,
-    );
-    b.installArtifact(glslang_standalone);
-    exe.step.dependOn(&build_glslang.make_header(
-        b,
-        glslang_standalone,
-        "etc/shaders/unlit.vert",
-        "lovr_shader_unlit_vert",
-        false,
-    ).step);
+    const glsl_h = build_ddx.to_header(b, ddx, "etc/shaders/lovr.glsl");
+    exe.step.dependOn(&glsl_h.step);
 
-    // run.addArg(b.fmt("lovr_shader_{s}_{s}", .{}));
-    // "etc/shaders/unlit.frag",
-    // "etc/shaders/normal.frag",
-    // "etc/shaders/font.frag",
-    // "etc/shaders/cubemap.vert",
-    // "etc/shaders/cubemap.frag",
-    // "etc/shaders/equirect.frag",
-    // "etc/shaders/fill.vert",
-    // "etc/shaders/fill_array.frag",
-    // "etc/shaders/mask.vert",
-    // "etc/shaders/animator.comp",
-    // "etc/shaders/blender.comp",
-    // "etc/shaders/tallymerge.comp",
-    // "etc/shaders/lovr.glsl",
-    // };
-    // for (SHADERS) |shd| {
-    //     const run = b.addRunArtifact(glslang_standalone);
-    //     // if(optimize){
-    //     //   $<$<CONFIG:Debug>:-gVS>
-    //     // }
-    //     run.addArgs(&.{
-    //         "--quiet",
-    //         "--target-env",
-    //         "vulkan1.1",
-    //         "--vn",
-    //     });
-    //     run.addArg(b.fmt("lovr_shader_{s}_{s}", .{}));
-    //     run.addArg("-o");
-    //     run.addFileArg(b.path(b.fmt("{s}.h", .{shd})));
-    //     run.addFileArg(b.path(shd));
-    // }
-    // function(compile_shaders)
-    //   if(LOVR_USE_GLSLANG AND ENABLE_GLSLANG_BINARIES AND NOT ANDROID)
-    //     set(GLSLANG_VALIDATOR $<TARGET_FILE:glslang-standalone>)
-    //   elseif(Vulkan_GLSLANG_VALIDATOR_EXECUTABLE)
-    //     set(GLSLANG_VALIDATOR "${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE}")
-    //   else()
-    //     find_program(GLSLANG_VALIDATOR glslang)
-    //     if(NOT GLSLANG_VALIDATOR)
-    //       message(FATAL_ERROR "Need glslangValidator installed or LOVR_USE_GLSLANG enabled")
-    //     endif()
-    //   endif()
-    //   set(LOVR_GLSL "${CMAKE_CURRENT_SOURCE_DIR}/etc/shaders/lovr.glsl")
-    //   file(GLOB shader_files "etc/shaders/*.${ARGV0}")
-    //   foreach(shader_file ${shader_files})
-    //     string(REGEX MATCH "([^\/]+)\\.${ARGV0}$" shader ${shader_file})
-    //     string(REPLACE ".${ARGV0}" "" shader ${shader})
-    //     add_custom_command(
-    //       OUTPUT ${shader_file}.h
-    //       DEPENDS ${shader_file} ${LOVR_GLSL}
-    //       COMMAND
-    //         ${GLSLANG_VALIDATOR}
-    //         --quiet
-    //         $<$<CONFIG:Debug>:-gVS>
-    //         --target-env vulkan1.1
-    //         --vn lovr_shader_${shader}_${ARGV0}
-    //         -o ${shader_file}.h
-    //         ${shader_file}
-    //     )
-    //     target_sources(lovr PRIVATE ${shader_file}.h)
-    //   endforeach()
-    // endfunction()
-    //
-    // compile_shaders("vert")
-    // compile_shaders("frag")
-    // compile_shaders("comp")
+    const glslang_root = b.path("deps/glslang-15.2.0");
+    const glslang = build_glslang.build(b, target, optimize, glslang_root);
+    b.installArtifact(glslang.standalone);
+    const is_debug = false;
+    exe.step.dependOn(&make_header(b, glslang.standalone, "unlit", "vert", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "unlit", "frag", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "normal", "frag", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "font", "frag", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "cubemap", "vert", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "cubemap", "frag", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "equirect", "frag", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "fill", "vert", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "fill_array", "frag", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "mask", "vert", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "animator", "comp", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "blender", "comp", is_debug).step);
+    exe.step.dependOn(&make_header(b, glslang.standalone, "tallymerge", "comp", is_debug).step);
 
     exe.linkLibrary(build_msdf(b, target, optimize));
     exe.linkLibrary(build_glfw(b, target, optimize));
-    exe.linkLibrary(glslang);
+    exe.linkLibrary(glslang.lib);
     // exe.addIncludePath(glslang.getEmittedIncludeTree().path(b, "Include"));
     // exe.addIncludePath(glslang.getEmittedIncludeTree().path(b, "PUblic"));
     exe.addIncludePath(b.path("deps/glslang/glslang/Include"));
@@ -240,5 +174,30 @@ pub fn build(b: *std.Build) void {
     }
     // cdb_step.dependOn(&boot_lua_h.run.step);
     // cdb_step.dependOn(&ttf_h.run.step);
-    cdb_step.dependOn(&glslang.step);
+    cdb_step.dependOn(&glslang.lib.step);
+}
+
+// "etc/shaders/unlit.vert", "lovr_shader_unlit_vert"
+fn make_header(
+    b: *std.Build,
+    glslang_standalone: *std.Build.Step.Compile,
+    name: []const u8,
+    sub: []const u8,
+    is_debug: bool,
+) *std.Build.Step.Run {
+    const run = b.addRunArtifact(glslang_standalone);
+    if (is_debug) {
+        run.addArg("-gVS");
+    }
+    run.addArgs(&.{
+        "--quiet",
+        "--target-env",
+        "vulkan1.1",
+        "--vn",
+        b.fmt("lovr_shader_{s}_{s}", .{ name, sub }),
+        "-o",
+    });
+    run.addFileArg(b.path(b.fmt("etc/shaders/{s}.{s}.h", .{ name, sub })));
+    run.addFileArg(b.path(b.fmt("etc/shaders/{s}.{s}", .{ name, sub })));
+    return run;
 }

@@ -2,25 +2,25 @@
 const std = @import("std");
 
 const flags = [_][]const u8{
+    "-DENABLE_SPIRV=1",
     "-DENABLE_OPT=0",
-    "-Wshorten-64-to-32",
-    "-fno-sanitize=undefined",
     "-std=c++17",
     "-fno-exceptions",
     "-fno-rtti",
 };
 
-pub fn config_build_info(b: *std.Build) *std.Build.Step.ConfigHeader {
+fn config_build_info(b: *std.Build) *std.Build.Step.ConfigHeader {
+    // 15.2.0 2024-02-24
     const glslang_build_info_h = b.addConfigHeader(.{
         .style = .{
             .cmake = b.path("deps/glslang/build_info.h.tmpl"),
         },
         .include_path = "glslang/build_info.h",
     }, .{
-        .major = "14",
+        .major = "15",
         .minor = "2",
         .patch = "0",
-        .flavor = "2024-05-02",
+        .flavor = "2024-02-24",
     });
     return glslang_build_info_h;
 }
@@ -44,6 +44,84 @@ fn build_osdep(
         },
     });
     c.addIncludePath(root);
+    return c;
+}
+
+fn build_generic_codegen(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    root: std.Build.LazyPath,
+) *std.Build.Step.Compile {
+    const c = b.addStaticLibrary(.{
+        .name = "GenericCodeGen",
+        .target = target,
+        .optimize = optimize,
+    });
+    c.linkLibCpp();
+    c.addCSourceFiles(.{
+        .root = root,
+        .files = &.{
+            "CodeGen.cpp",
+            "Link.cpp",
+        },
+        .flags = &flags,
+    });
+    c.addIncludePath(root);
+    return c;
+}
+
+fn build_machine_independent(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    root: std.Build.LazyPath,
+    build_info: *std.Build.Step.ConfigHeader,
+) *std.Build.Step.Compile {
+    const c = b.addStaticLibrary(.{
+        .name = "MachineIndependent",
+        .target = target,
+        .optimize = optimize,
+    });
+    c.linkLibCpp();
+    c.addCSourceFiles(.{
+        .root = root,
+        .files = &.{
+            // MachineIndependent/glslang.y
+            "glslang_tab.cpp",
+            "attribute.cpp",
+            "Constant.cpp",
+            "iomapper.cpp",
+            "InfoSink.cpp",
+            "Initialize.cpp",
+            "IntermTraverse.cpp",
+            "Intermediate.cpp",
+            "ParseContextBase.cpp",
+            "ParseHelper.cpp",
+            "PoolAlloc.cpp",
+            "RemoveTree.cpp",
+            "Scan.cpp",
+            "ShaderLang.cpp",
+            "SpirvIntrinsics.cpp",
+            "SymbolTable.cpp",
+            "Versions.cpp",
+            "intermOut.cpp",
+            "limits.cpp",
+            "linkValidate.cpp",
+            "parseConst.cpp",
+            "reflection.cpp",
+            "preprocessor/Pp.cpp",
+            "preprocessor/PpAtom.cpp",
+            "preprocessor/PpContext.cpp",
+            "preprocessor/PpScanner.cpp",
+            "preprocessor/PpTokens.cpp",
+            "propagateNoContraction.cpp",
+        },
+        .flags = &flags,
+    });
+    c.addIncludePath(root);
+    c.addIncludePath(root.dirname().dirname());
+    c.addConfigHeader(build_info);
     return c;
 }
 
@@ -99,13 +177,14 @@ fn build_spirv(
             // "SPVRemapper.cpp",
             // "doc.cpp",
         },
+        .flags = &flags,
     });
     c.addIncludePath(root.path(b, ".."));
     return c;
 }
 
 // target_link_libraries(MachineIndependent PRIVATE OSDependent GenericCodeGen)
-pub fn lib(
+fn lib(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
@@ -123,48 +202,11 @@ pub fn lib(
     c.addCSourceFiles(.{
         .root = root,
         .files = &.{
-            "glslang/GenericCodeGen/CodeGen.cpp",
-            "glslang/GenericCodeGen/Link.cpp",
             "glslang/CInterface/glslang_c_interface.cpp",
         },
     });
-    c.addCSourceFiles(.{
-        .root = b.path("deps/glslang/glslang/MachineIndependent"),
-        .files = &.{
-            // "glslang.y",
-            "glslang_tab.cpp",
-            "attribute.cpp",
-            "Constant.cpp",
-            "iomapper.cpp",
-            "InfoSink.cpp",
-            "Initialize.cpp",
-            "IntermTraverse.cpp",
-            "Intermediate.cpp",
-            "ParseContextBase.cpp",
-            "ParseHelper.cpp",
-            "PoolAlloc.cpp",
-            "RemoveTree.cpp",
-            "Scan.cpp",
-            "ShaderLang.cpp",
-            "SpirvIntrinsics.cpp",
-            "SymbolTable.cpp",
-            "Versions.cpp",
-            "intermOut.cpp",
-            "limits.cpp",
-            "linkValidate.cpp",
-            "parseConst.cpp",
-            "reflection.cpp",
-            "preprocessor/Pp.cpp",
-            "preprocessor/PpAtom.cpp",
-            "preprocessor/PpContext.cpp",
-            "preprocessor/PpScanner.cpp",
-            "preprocessor/PpTokens.cpp",
-            "propagateNoContraction.cpp",
-        },
-    });
-
     c.addIncludePath(root);
-
+    c.linkLibrary(build_machine_independent(b, target, optimize, root.path(b, "glslang/MachineIndependent"), build_info));
     c.installHeadersDirectory(b.path("deps/glslang/glslang/Include"), "Include", .{});
     c.installHeadersDirectory(b.path("deps/glslang/glslang/Public"), "PUblic", .{});
 
@@ -176,7 +218,7 @@ pub fn lib(
 //
 // if(WIN32)
 //     set(LIBRARIES ${LIBRARIES} psapi)
-pub fn standalone(
+fn standalone(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
@@ -199,10 +241,8 @@ pub fn standalone(
     });
     exe.linkLibCpp();
     exe.addIncludePath(root);
+
     exe.linkLibrary(glslang);
-    exe.linkLibrary(build_limits(b, target, optimize, root));
-    exe.linkLibrary(build_osdep(b, target, optimize, root.path(b, "glslang/OSDependent/Windows")));
-    exe.linkLibrary(build_spirv(b, target, optimize, root.path(b, "SPIRV"), build_info));
     exe.linkSystemLibrary("psapi");
 
     const py = b.addSystemCommand(&.{"py"});
@@ -216,26 +256,28 @@ pub fn standalone(
     return exe;
 }
 
-pub fn make_header(
+pub fn build(
     b: *std.Build,
-    glslang_standalone: *std.Build.Step.Compile,
-    path: []const u8,
-    name: []const u8,
-    is_debug: bool,
-) *std.Build.Step.Run {
-    const run = b.addRunArtifact(glslang_standalone);
-    if (is_debug) {
-        run.addArg("-gVS");
-    }
-    run.addArgs(&.{
-        "--quiet",
-        "--target-env",
-        "vulkan1.1",
-        "--vn",
-        name,
-        "-o",
-    });
-    run.addFileArg(b.path(b.fmt("{s}.h", .{path})));
-    run.addFileArg(b.path(path));
-    return run;
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    root: std.Build.LazyPath,
+) struct { lib: *std.Build.Step.Compile, standalone: *std.Build.Step.Compile } {
+    const build_info = config_build_info(b);
+
+    const glslang_lib = lib(b, target, optimize, root, build_info);
+    glslang_lib.linkLibrary(build_osdep(b, target, optimize, root.path(b, "glslang/OSDependent/Windows")));
+    glslang_lib.linkLibrary(build_generic_codegen(b, target, optimize, root.path(b, "glslang/GenericCodeGen")));
+    glslang_lib.linkLibrary(build_limits(b, target, optimize, root));
+    glslang_lib.linkLibrary(build_spirv(b, target, optimize, root.path(b, "SPIRV"), build_info));
+
+    const glslang_standalone = standalone(
+        b,
+        target,
+        optimize,
+        root,
+        build_info,
+        glslang_lib,
+    );
+
+    return .{ .lib = glslang_lib, .standalone = glslang_standalone };
 }
