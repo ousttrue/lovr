@@ -129,37 +129,92 @@ pub fn build(b: *std.Build) void {
     const ttf_h = build_ddx.to_header(b, ddx, "etc/VarelaRound.ttf");
     exe.step.dependOn(&ttf_h.step);
 
-    const SHADERS = [_][]const u8{
-        "etc/shaders/unlit.vert",
-        "etc/shaders/unlit.frag",
-        "etc/shaders/normal.frag",
-        "etc/shaders/font.frag",
-        "etc/shaders/cubemap.vert",
-        "etc/shaders/cubemap.frag",
-        "etc/shaders/equirect.frag",
-        "etc/shaders/fill.vert",
-        "etc/shaders/fill_array.frag",
-        "etc/shaders/mask.vert",
-        "etc/shaders/animator.comp",
-        "etc/shaders/blender.comp",
-        "etc/shaders/tallymerge.comp",
-        "etc/shaders/lovr.glsl",
-    };
-    for (SHADERS) |shd| {
-        const h = build_ddx.to_header(b, ddx, shd);
-        exe.step.dependOn(&h.step);
-    }
-
     const build_info = build_glslang.config_build_info(b);
-    const glslang = build_glslang.lib(b, target, optimize, build_info);
+    const glslang_root = b.path("deps/glslang");
+    const glslang = build_glslang.lib(b, target, optimize, glslang_root, build_info);
     const glslang_standalone = build_glslang.standalone(
         b,
         target,
         optimize,
+        glslang_root,
+        build_info,
         glslang,
     );
-    glslang_standalone.addConfigHeader(build_info);
     b.installArtifact(glslang_standalone);
+    exe.step.dependOn(&build_glslang.make_header(
+        b,
+        glslang_standalone,
+        "etc/shaders/unlit.vert",
+        "lovr_shader_unlit_vert",
+        false,
+    ).step);
+
+    // run.addArg(b.fmt("lovr_shader_{s}_{s}", .{}));
+    // "etc/shaders/unlit.frag",
+    // "etc/shaders/normal.frag",
+    // "etc/shaders/font.frag",
+    // "etc/shaders/cubemap.vert",
+    // "etc/shaders/cubemap.frag",
+    // "etc/shaders/equirect.frag",
+    // "etc/shaders/fill.vert",
+    // "etc/shaders/fill_array.frag",
+    // "etc/shaders/mask.vert",
+    // "etc/shaders/animator.comp",
+    // "etc/shaders/blender.comp",
+    // "etc/shaders/tallymerge.comp",
+    // "etc/shaders/lovr.glsl",
+    // };
+    // for (SHADERS) |shd| {
+    //     const run = b.addRunArtifact(glslang_standalone);
+    //     // if(optimize){
+    //     //   $<$<CONFIG:Debug>:-gVS>
+    //     // }
+    //     run.addArgs(&.{
+    //         "--quiet",
+    //         "--target-env",
+    //         "vulkan1.1",
+    //         "--vn",
+    //     });
+    //     run.addArg(b.fmt("lovr_shader_{s}_{s}", .{}));
+    //     run.addArg("-o");
+    //     run.addFileArg(b.path(b.fmt("{s}.h", .{shd})));
+    //     run.addFileArg(b.path(shd));
+    // }
+    // function(compile_shaders)
+    //   if(LOVR_USE_GLSLANG AND ENABLE_GLSLANG_BINARIES AND NOT ANDROID)
+    //     set(GLSLANG_VALIDATOR $<TARGET_FILE:glslang-standalone>)
+    //   elseif(Vulkan_GLSLANG_VALIDATOR_EXECUTABLE)
+    //     set(GLSLANG_VALIDATOR "${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE}")
+    //   else()
+    //     find_program(GLSLANG_VALIDATOR glslang)
+    //     if(NOT GLSLANG_VALIDATOR)
+    //       message(FATAL_ERROR "Need glslangValidator installed or LOVR_USE_GLSLANG enabled")
+    //     endif()
+    //   endif()
+    //   set(LOVR_GLSL "${CMAKE_CURRENT_SOURCE_DIR}/etc/shaders/lovr.glsl")
+    //   file(GLOB shader_files "etc/shaders/*.${ARGV0}")
+    //   foreach(shader_file ${shader_files})
+    //     string(REGEX MATCH "([^\/]+)\\.${ARGV0}$" shader ${shader_file})
+    //     string(REPLACE ".${ARGV0}" "" shader ${shader})
+    //     add_custom_command(
+    //       OUTPUT ${shader_file}.h
+    //       DEPENDS ${shader_file} ${LOVR_GLSL}
+    //       COMMAND
+    //         ${GLSLANG_VALIDATOR}
+    //         --quiet
+    //         $<$<CONFIG:Debug>:-gVS>
+    //         --target-env vulkan1.1
+    //         --vn lovr_shader_${shader}_${ARGV0}
+    //         -o ${shader_file}.h
+    //         ${shader_file}
+    //     )
+    //     target_sources(lovr PRIVATE ${shader_file}.h)
+    //   endforeach()
+    // endfunction()
+    //
+    // compile_shaders("vert")
+    // compile_shaders("frag")
+    // compile_shaders("comp")
 
     exe.linkLibrary(build_msdf(b, target, optimize));
     exe.linkLibrary(build_glfw(b, target, optimize));
